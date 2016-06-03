@@ -39,20 +39,32 @@ import (
 	"time"
 )
 
-const (
-	WEEK = time.Hour * 24 * 7
-)
-
 type FormatFunc func(t time.Time) string
 
-func weekNumberFormatter(t time.Time) string {
-	start := time.Date(t.Year(), time.January, 1, 23, 0, 0, 0, time.UTC)
-	week := 0
-	for start.Before(t) {
-		week += 1
-		start = start.Add(WEEK)
-	}
+func weekNumberU(t time.Time) string {
+	week := (t.YearDay() + 7 - int(t.Weekday())) / 7
 	return fmt.Sprintf("%02d", week)
+}
+
+func weekNumberW(t time.Time) string {
+	var sub int
+	if t.Weekday() > 0 {
+		sub = int(t.Weekday()) - 1
+	} else {
+		sub = 6
+	}
+	week := (t.YearDay() + 7 - sub) / 7
+	return fmt.Sprintf("%02d", week)
+}
+
+func weekNumberV(t time.Time) string {
+	_, week := t.ISOWeek()
+	return fmt.Sprintf("%02d", week)
+}
+
+func weekYearG(t time.Time) string {
+	year, _ := t.ISOWeek()
+	return fmt.Sprintf("%04d", year)
 }
 
 // See http://docs.python.org/2/library/time.html#time.strftime
@@ -98,8 +110,12 @@ var formats = map[string]FormatFunc{
 	"%S": func(t time.Time) string { // Second as a decimal number [00,61]
 		return t.Format("05")
 	},
-	"%U": weekNumberFormatter, // Week number of the year
-	"%W": weekNumberFormatter, // Week number of the year
+
+	"%U": weekNumberU, // Week number of the year, week starts on Sunday (before first is week 0)
+	"%W": weekNumberW, // Week number of the year, week starts on Monday (before first is week 0)
+	"%V": weekNumberV, // ISO week number of the year
+	"%G": weekYearG,   // ISO week year
+
 	"%w": func(t time.Time) string { // Weekday as a decimal number
 		return fmt.Sprintf("%d", t.Weekday())
 	},
